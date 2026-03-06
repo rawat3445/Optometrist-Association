@@ -42,7 +42,7 @@ export default function Navbar() {
             {/* Text beside logo with gradient on hover */}
             <div className="hidden sm:block">
               <div className="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent group-hover:from-blue-600 group-hover:to-teal-600 transition-all duration-300">
-                Optometrist Association
+                Optometrist Society
               </div>
               <div className="text-xs text-gray-500 font-medium">
                 Excellence in Eye Care

@@ -1,494 +1,759 @@
 "use client";
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import {
-  ChevronRight,
-  ChevronLeft,
-  Check,
-  Upload,
-  Loader2,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 
-// Define validation schemas for each step
-const step1Schema = z.object({
-  fullName: z.string().min(3, "Name must be at least 3 characters"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().regex(/^[0-9]{10}$/, "Phone must be 10 digits"),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
-  registrationNumber: z.string().min(1, "Registration number is required"),
-  currentInstitution: z.string().min(2, "Institution name is required"),
-});
-
-const step2Schema = z.object({
-  degree: z.string().min(1, "Degree is required"),
-  graduationYear: z.string().min(4, "Valid year required"),
-  degreeCertificate: z
-    .any()
-    .refine((files) => files?.length > 0, "Certificate is required"),
-  registrationProof: z
-    .any()
-    .refine((files) => files?.length > 0, "Registration proof is required"),
-});
-
-const step3Schema = z.object({
-  membershipType: z.enum(["student", "practicing", "lifetime"]),
-  researchMentorship: z.boolean().default(false),
-  additionalServices: z.array(z.string()).optional(),
-});
-
-export default function RegisterPage() {
+export function RegisterPage() {
+  const [submitStatus, setSubmitStatus] = useState("idle"); // idle | submitting | success | error
+  const [submitError, setSubmitError] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  const totalSteps = 4;
+  const { register, watch, setValue, handleSubmit, getValues, reset } = useForm(
+    {
+      defaultValues: {
+        membershipType: "",
+        sameAddress: false,
+        declarationAccepted: false,
+      },
+    }
+  );
 
-  // Form hook for current step
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    watch,
-  } = useForm({
-    resolver: zodResolver(
-      currentStep === 1
-        ? step1Schema
-        : currentStep === 2
-        ? step2Schema
-        : step3Schema
-    ),
-  });
+  const validateStep1 = (data) => {
+    const newErrors = {};
 
-  // Handle step navigation
-  const nextStep = (data) => {
-    setFormData({ ...formData, ...data });
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+    if (!data.fullName || data.fullName.length < 3)
+      newErrors.fullName = "Name must be 3+ characters";
+    if (!data.guardianName || data.guardianName.length < 3)
+      newErrors.guardianName = "Name must be 3+ characters";
+    if (!data.dateOfBirth) newErrors.dateOfBirth = "Date of birth is required";
+    if (!data.occupation || data.occupation.length < 2)
+      newErrors.occupation = "Occupation required";
+    if (!data.phone || !/^[0-9]{10}$/.test(data.phone))
+      newErrors.phone = "Enter 10-digit mobile number";
+    if (!data.email || !data.email.includes("@"))
+      newErrors.email = "Enter valid email";
+    if (!data.permanentAddress || data.permanentAddress.length < 10)
+      newErrors.permanentAddress = "Address must be 10+ characters";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateStep2 = (data) => {
+    const newErrors = {};
+    if (!data.degree) newErrors.degree = "Please select a degree";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateStep3 = (data) => {
+    const newErrors = {};
+    if (!data.membershipType)
+      newErrors.membershipType = "Please select a membership type";
+    if (!data.paymentProof || data.paymentProof?.length === 0)
+      newErrors.paymentProof = "Please upload payment proof";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateStep4 = (data) => {
+    const newErrors = {};
+    if (!data.declarationAccepted)
+      newErrors.declarationAccepted =
+        "You must accept the declaration to continue";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const nextStep = () => {
+    const data = getValues();
+
+    if (currentStep === 1) {
+      if (validateStep1(data)) {
+        setErrors({});
+        setCurrentStep(2);
+      }
+      return;
+    }
+
+    if (currentStep === 2) {
+      if (validateStep2(data)) {
+        setErrors({});
+        setCurrentStep(3);
+      }
+      return;
+    }
+
+    if (currentStep === 3) {
+      if (validateStep3(data)) {
+        setErrors({});
+        setCurrentStep(4);
+      }
+      return;
+    }
+
+    if (currentStep === 4) {
+      if (validateStep4(data)) {
+        setErrors({});
+        setCurrentStep(5);
+      }
+      return;
     }
   };
 
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
+  const prevStep = () => setCurrentStep((s) => Math.max(s - 1, 1));
 
-  // Final submission
   const onFinalSubmit = async (data) => {
-    setIsSubmitting(true);
-    const finalData = { ...formData, ...data };
-
     try {
+      setSubmitStatus("submitting");
+      setSubmitError("");
+
       // Create FormData for file uploads
-      const submitData = new FormData();
-      Object.keys(finalData).forEach((key) => {
-        if (finalData[key] instanceof FileList) {
-          submitData.append(key, finalData[key][0]);
+      const formData = new FormData();
+
+      // Add all form fields to FormData
+      Object.entries(data).forEach(([key, value]) => {
+        if (value === null || value === undefined) return;
+
+        if (value instanceof FileList) {
+          // Handle file inputs
+          if (value[0]) {
+            formData.append(key, value[0]);
+          }
+        } else if (typeof value === "boolean") {
+          // Convert boolean to string
+          formData.append(key, value.toString());
+        } else if (value instanceof Date) {
+          // Convert date to ISO string
+          formData.append(key, value.toISOString().split("T")[0]);
         } else {
-          submitData.append(key, finalData[key]);
+          // String values
+          formData.append(key, value);
         }
       });
 
-      const response = await fetch("/api/register", {
+      // Send to API endpoint
+      const response = await fetch("/api/membership/register", {
         method: "POST",
-        body: submitData,
+        body: formData,
       });
 
-      if (response.ok) {
-        setCurrentStep(4); // Move to review step
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Submission failed. Please try again.");
       }
+
+      // Success
+      setSubmitStatus("success");
+      setCurrentStep(6);
     } catch (error) {
-      console.error("Registration error:", error);
-    } finally {
-      setIsSubmitting(false);
+      setSubmitStatus("error");
+      setSubmitError(error.message || "Something went wrong.");
+      console.error("Form submission error:", error);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Progress Indicator */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            {[1, 2, 3, 4].map((step) => (
-              <div key={step} className="flex items-center flex-1">
-                <motion.div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                    step < currentStep
-                      ? "bg-green-500 text-white"
-                      : step === currentStep
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-500"
-                  }`}
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: step === currentStep ? 1.1 : 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {step < currentStep ? <Check size={20} /> : step}
-                </motion.div>
-                {step < 4 && (
-                  <div
-                    className={`flex-1 h-1 mx-2 ${
-                      step < currentStep ? "bg-green-500" : "bg-gray-200"
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="text-center text-gray-600">
-            Step {currentStep} of {totalSteps}
-          </div>
-        </div>
+  // Reset form function
+  const resetForm = () => {
+    reset();
+    setCurrentStep(1);
+    setSubmitStatus("idle");
+    setSubmitError("");
+    setErrors({});
+  };
 
-        {/* Form Container */}
-        <motion.div
-          className="bg-white rounded-2xl shadow-xl p-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-10 px-4">
+      <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+        <p className="text-center mb-6 text-gray-600 font-medium text-lg">
+          Step {currentStep} of 5
+        </p>
+
+        {/* Status Messages */}
+        {submitStatus === "submitting" && (
+          <div className="mb-4 p-3 bg-blue-50 text-blue-700 rounded-lg flex items-center gap-2">
+            <svg
+              className="animate-spin h-5 w-5 text-blue-600"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              ></path>
+            </svg>
+            Submitting your registration...
+          </div>
+        )}
+
+        {submitStatus === "error" && (
+          <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">
+            {submitError}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit(onFinalSubmit)} className="space-y-6">
           <AnimatePresence mode="wait">
             {currentStep === 1 && (
               <Step1
                 key="step1"
                 register={register}
                 errors={errors}
-                onNext={handleSubmit(nextStep)}
+                onNext={nextStep}
+                watch={watch}
+                setValue={setValue}
               />
             )}
+
             {currentStep === 2 && (
               <Step2
                 key="step2"
                 register={register}
                 errors={errors}
-                onNext={handleSubmit(nextStep)}
+                onNext={nextStep}
                 onPrev={prevStep}
               />
             )}
+
             {currentStep === 3 && (
               <Step3
                 key="step3"
                 register={register}
+                watch={watch}
                 errors={errors}
-                onSubmit={handleSubmit(onFinalSubmit)}
                 onPrev={prevStep}
-                isSubmitting={isSubmitting}
+                onNext={nextStep}
               />
             )}
+
             {currentStep === 4 && (
-              <ReviewStep key="review" formData={formData} />
+              <DeclarationStep
+                key="step4"
+                register={register}
+                errors={errors}
+                onPrev={prevStep}
+                onNext={nextStep}
+              />
+            )}
+
+            {currentStep === 5 && (
+              <ReviewStep
+                key="step5"
+                getValues={getValues}
+                onPrev={prevStep}
+                submitStatus={submitStatus}
+              />
+            )}
+
+            {currentStep === 6 && (
+              <SuccessStep key="success" onReset={resetForm} />
             )}
           </AnimatePresence>
-        </motion.div>
+        </form>
       </div>
     </div>
   );
 }
 
-// Step 1: Personal Information
-function Step1({ register, errors, onNext }) {
+function Step1({ register, errors, onNext, watch, setValue }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: 50 }}
+      initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -50 }}
-      transition={{ duration: 0.3 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-4"
     >
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">
-        Personal Information
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-800">Personal Details</h2>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Full Name <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Full Name *
           </label>
           <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             {...register("fullName")}
-            type="text"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            placeholder="Dr. John Doe"
           />
           {errors.fullName && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.fullName.message}
-            </p>
+            <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address <span className="text-red-500">*</span>
-            </label>
-            <input
-              {...register("email")}
-              type="email"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              placeholder="john.doe@example.com"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              {...register("phone")}
-              type="tel"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              placeholder="9876543210"
-            />
-            {errors.phone && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.phone.message}
-              </p>
-            )}
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Father/Husband Name *
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("guardianName")}
+          />
+          {errors.guardianName && (
+            <p className="text-red-500 text-xs mt-1">{errors.guardianName}</p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date of Birth <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Date of Birth *
           </label>
           <input
-            {...register("dateOfBirth")}
             type="date"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("dateOfBirth")}
           />
           {errors.dateOfBirth && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.dateOfBirth.message}
-            </p>
+            <p className="text-red-500 text-xs mt-1">{errors.dateOfBirth}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Professional Registration Number{" "}
-            <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Occupation *
           </label>
           <input
-            {...register("registrationNumber")}
-            type="text"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            placeholder="REG/2024/12345"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("occupation")}
           />
-          {errors.registrationNumber && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.registrationNumber.message}
-            </p>
+          {errors.occupation && (
+            <p className="text-red-500 text-xs mt-1">{errors.occupation}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Current Institution/Practice <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Mobile Number *
           </label>
           <input
-            {...register("currentInstitution")}
-            type="text"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            placeholder="ABC Eye Hospital"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("phone")}
+            placeholder="1234567890"
           />
-          {errors.currentInstitution && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.currentInstitution.message}
-            </p>
+          {errors.phone && (
+            <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
           )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Email *
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("email")}
+            placeholder="name@example.com"
+          />
+          {errors.email && (
+            <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            PAN Number
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("panNumber")}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Aadhaar Number
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("aadhaarNumber")}
+          />
         </div>
       </div>
 
-      <button
-        onClick={onNext}
-        className="mt-8 w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2 group"
-      >
-        Continue to Qualifications
-        <ChevronRight
-          className="group-hover:translate-x-1 transition"
-          size={20}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Permanent Address *
+        </label>
+        <textarea
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          rows={3}
+          {...register("permanentAddress")}
         />
+        {errors.permanentAddress && (
+          <p className="text-red-500 text-xs mt-1">{errors.permanentAddress}</p>
+        )}
+      </div>
+
+      <label className="flex items-center gap-2 p-3 border border-gray-200 rounded-lg">
+        <input
+          type="checkbox"
+          {...register("sameAddress")}
+          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+          onChange={(e) => {
+            if (e.target.checked) {
+              setValue("correspondenceAddress", watch("permanentAddress"));
+            }
+          }}
+        />
+        <span className="text-sm text-gray-700">Same as permanent address</span>
+      </label>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Correspondence Address
+        </label>
+        <textarea
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          rows={3}
+          {...register("correspondenceAddress")}
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={onNext}
+        className="w-full md:w-auto bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 font-semibold flex items-center justify-center gap-2 ml-auto shadow-lg"
+      >
+        Continue <ChevronRight className="w-5 h-5" />
       </button>
     </motion.div>
   );
 }
 
-// Step 2: Qualification Details (similar structure)
 function Step2({ register, errors, onNext, onPrev }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: 50 }}
+      initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -50 }}
-      transition={{ duration: 0.3 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
     >
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">
+      <h2 className="text-2xl font-bold text-gray-800">
         Qualification Details
       </h2>
 
-      {/* Similar input fields for qualifications */}
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Degree <span className="text-red-500">*</span>
-          </label>
-          <select
-            {...register("degree")}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-          >
-            <option value="">Select Degree</option>
-            <option value="boptom">B.Optom</option>
-            <option value="moptom">M.Optom</option>
-            <option value="phd">PhD in Optometry</option>
-          </select>
-          {errors.degree && (
-            <p className="text-red-500 text-sm mt-1">{errors.degree.message}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Upload Degree Certificate <span className="text-red-500">*</span>
-          </label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition cursor-pointer">
-            <Upload className="mx-auto mb-2 text-gray-400" size={32} />
-            <input
-              {...register("degreeCertificate")}
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              className="hidden"
-              id="degree-upload"
-            />
-            <label htmlFor="degree-upload" className="cursor-pointer">
-              <span className="text-blue-600 font-medium">Click to upload</span>
-              <span className="text-gray-500"> or drag and drop</span>
-              <p className="text-sm text-gray-400 mt-1">
-                PDF, JPG, PNG (Max 5MB)
-              </p>
-            </label>
-          </div>
-          {errors.degreeCertificate && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.degreeCertificate.message}
-            </p>
-          )}
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Degree *
+        </label>
+        <select
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          {...register("degree")}
+        >
+          <option value="">Select Degree</option>
+          <option value="boptom">B.Optom</option>
+          <option value="moptom">M.Optom</option>
+          <option value="phd">PhD</option>
+        </select>
+        {errors.degree && (
+          <p className="text-red-500 text-xs mt-1">{errors.degree}</p>
+        )}
       </div>
 
-      <div className="flex gap-4 mt-8">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Degree Certificate
+        </label>
+        <input
+          type="file"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          {...register("degreeCertificate")}
+        />
+      </div>
+
+      <div className="flex gap-4">
         <button
+          type="button"
           onClick={onPrev}
-          className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2"
+          className="flex-1 py-3 px-6 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold flex items-center justify-center gap-2"
         >
-          <ChevronLeft size={20} />
-          Back
+          <ChevronLeft className="w-5 h-5" /> Back
         </button>
         <button
+          type="button"
           onClick={onNext}
-          className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2 group"
+          className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 font-semibold flex items-center justify-center gap-2 shadow-lg"
         >
-          Continue
-          <ChevronRight
-            className="group-hover:translate-x-1 transition"
-            size={20}
-          />
+          Continue <ChevronRight className="w-5 h-5" />
         </button>
       </div>
     </motion.div>
   );
 }
 
-// Step 3: Membership Type
-function Step3({ register, errors, onSubmit, onPrev, isSubmitting }) {
+function Step3({ register, watch, errors, onPrev, onNext }) {
+  const membershipType = watch("membershipType");
+
+  const getFeeText = () => {
+    if (membershipType === "student")
+      return "Student Member fee: ₹750 per year";
+    if (membershipType === "practicing")
+      return "Regular / Associate fee: ₹1000 per year";
+    return "Please select a membership type to see the fee.";
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, x: 50 }}
+      initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -50 }}
-      transition={{ duration: 0.3 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
     >
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">Membership Type</h2>
+      <h2 className="text-2xl font-bold text-gray-800">Membership</h2>
+
+      <div className="space-y-3">
+        {["student", "practicing"].map((t) => (
+          <label
+            key={t}
+            className={`flex items-center gap-3 rounded-md border px-4 py-2 text-sm capitalize cursor-pointer ${
+              membershipType === t
+                ? "border-blue-500 bg-blue-50"
+                : "border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            <input
+              type="radio"
+              value={t}
+              {...register("membershipType")}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+            />
+            {t}
+          </label>
+        ))}
+        {errors.membershipType && (
+          <p className="text-red-500 text-xs">{errors.membershipType}</p>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <p className="font-semibold mb-1">Membership Fees</p>
+        <p>{getFeeText()}</p>
+        <p className="mt-1 text-xs text-amber-900">
+          Proof of annual Membership fees (Regular/Associate: ₹1000, Student
+          Member: ₹750) is required.
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 p-4 flex flex-col items-center gap-3">
+        <p className="text-sm text-gray-700 text-center">
+          Scan this QR code to pay your membership fees using UPI or supported
+          payment apps.
+        </p>
+        <Image
+          src="/opto_site_QR.jpeg"
+          width={200}
+          height={200}
+          alt="Payment QR"
+        />
+        <p className="text-xs text-gray-500 text-center">
+          After successful payment, upload the proof of payment below.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">
+          Proof of payment (screenshot / PDF) *
+        </label>
+        <input
+          type="file"
+          accept="image/*,application/pdf"
+          {...register("paymentProof")}
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1 file:text-sm file:text-blue-700 hover:file:bg-blue-100"
+        />
+        {errors.paymentProof && (
+          <p className="text-red-500 text-xs">{errors.paymentProof}</p>
+        )}
+        <p className="text-xs text-gray-500">
+          Upload UPI screenshot, bank confirmation, or PDF receipt.
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onPrev}
+          className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          <ChevronLeft className="h-4 w-4" /> Back
+        </button>
+        <button
+          type="button"
+          onClick={onNext}
+          className="inline-flex items-center gap-2 rounded-md bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          Continue <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+function DeclarationStep({ register, errors, onPrev, onNext }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
+    >
+      <h2 className="text-2xl font-bold text-gray-800">
+        Declaration & Consent
+      </h2>
+
+      <div className="border rounded-lg p-4 text-sm text-gray-700 space-y-3 max-h-64 overflow-y-auto">
+        <p>
+          (i) I unconditionally subscribe to the aims and objects of the
+          Society.
+        </p>
+        <p>
+          (ii) I shall abide by the bylaws of the Society as amended from time
+          to time.
+        </p>
+        <p>
+          (iii) I have not been convicted of any offence involving moral
+          turpitude.
+        </p>
+        <p>
+          (iv) All information and documents provided by me are true and
+          correct.
+        </p>
+      </div>
+
+      <label className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          {...register("declarationAccepted")}
+          className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded"
+        />
+        <span className="text-sm text-gray-700">
+          I have read and agree to the above declaration
+        </span>
+      </label>
+
+      {errors?.declarationAccepted && (
+        <p className="text-red-500 text-sm">{errors.declarationAccepted}</p>
+      )}
+
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onPrev}
+          className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          <ChevronLeft className="h-4 w-4" /> Back
+        </button>
+
+        <button
+          type="button"
+          onClick={onNext}
+          className="inline-flex items-center gap-2 rounded-md bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-700"
+        >
+          Continue <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+function ReviewStep({ getValues, onPrev, submitStatus }) {
+  const data = getValues();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
+    >
+      <h2 className="text-2xl font-bold text-gray-800">
+        Review Your Application
+      </h2>
 
       <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {["student", "practicing", "lifetime"].map((type) => (
-            <label
-              key={type}
-              className="relative border-2 border-gray-200 rounded-xl p-6 cursor-pointer hover:border-blue-500 transition"
-            >
-              <input
-                {...register("membershipType")}
-                type="radio"
-                value={type}
-                className="absolute top-4 right-4"
-              />
-              <div className="text-center">
-                <h3 className="text-lg font-bold capitalize mb-2">{type}</h3>
-                <p className="text-2xl font-bold text-blue-600 mb-2">
-                  ₹
-                  {type === "student"
-                    ? "500"
-                    : type === "practicing"
-                    ? "2000"
-                    : "10000"}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {type === "lifetime" ? "One-time payment" : "Annual"}
-                </p>
-              </div>
-            </label>
-          ))}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <h3 className="font-medium text-gray-700 mb-2">Personal Details</h3>
+          <p>
+            <span className="font-medium">Name:</span> {data.fullName}
+          </p>
+          <p>
+            <span className="font-medium">Father/Husband:</span>{" "}
+            {data.guardianName}
+          </p>
+          <p>
+            <span className="font-medium">Email:</span> {data.email}
+          </p>
+          <p>
+            <span className="font-medium">Phone:</span> {data.phone}
+          </p>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              {...register("researchMentorship")}
-              type="checkbox"
-              className="mt-1"
-            />
-            <div>
-              <h4 className="font-semibold text-gray-800">
-                Research Mentorship Programme
-              </h4>
-              <p className="text-sm text-gray-600 mt-1">
-                Get personalized guidance from experienced researchers.
-                Additional ₹3,000/year
-              </p>
-            </div>
-          </label>
+        <div className="border border-gray-200 rounded-lg p-4">
+          <h3 className="font-medium text-gray-700 mb-2">Qualification</h3>
+          <p>
+            <span className="font-medium">Degree:</span> {data.degree}
+          </p>
+        </div>
+
+        <div className="border border-gray-200 rounded-lg p-4">
+          <h3 className="font-medium text-gray-700 mb-2">Membership</h3>
+          <p>
+            <span className="font-medium">Type:</span> {data.membershipType}
+          </p>
         </div>
       </div>
 
-      <div className="flex gap-4 mt-8">
+      <div className="flex items-center justify-between">
         <button
+          type="button"
           onClick={onPrev}
-          className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-300 transition"
+          disabled={submitStatus === "submitting"}
+          className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
         >
-          <ChevronLeft size={20} className="inline mr-2" />
-          Back
+          <ChevronLeft className="h-4 w-4" /> Back
         </button>
+
         <button
-          onClick={onSubmit}
-          disabled={isSubmitting}
-          className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50"
+          type="submit"
+          disabled={submitStatus === "submitting"}
+          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? (
+          {submitStatus === "submitting" ? (
             <>
-              <Loader2 className="inline mr-2 animate-spin" size={20} />
+              <svg
+                className="animate-spin h-4 w-4 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                ></path>
+              </svg>
               Submitting...
             </>
           ) : (
-            "Submit Application"
+            "Final Submit"
           )}
         </button>
       </div>
@@ -496,33 +761,60 @@ function Step3({ register, errors, onSubmit, onPrev, isSubmitting }) {
   );
 }
 
-// Step 4: Review & Pending Approval
-function ReviewStep({ formData }) {
+function SuccessStep({ onReset }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="text-center py-8"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="space-y-4 text-center py-8"
     >
-      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-        <Check className="text-green-600" size={40} />
+      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+        <svg
+          className="w-8 h-8 text-green-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M5 13l4 4L19 7"
+          ></path>
+        </svg>
       </div>
-      <h2 className="text-3xl font-bold text-gray-800 mb-4">
-        Application Submitted!
+
+      <h2 className="text-2xl font-bold text-green-700">
+        Registration Successful! 🎉
       </h2>
-      <p className="text-gray-600 mb-6">
-        Your membership application has been successfully submitted and is now
-        pending review.
+
+      <p className="text-gray-600">
+        Thank you for registering with the Optometry Association. Your
+        application is now pending review.
       </p>
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
-        <h3 className="font-semibold text-gray-800 mb-3">Next Steps:</h3>
-        <ol className="text-left text-sm text-gray-600 space-y-2">
-          <li>1. Secretary will review your documents</li>
-          <li>2. President will provide final approval</li>
-          <li>3. You&apos;ll receive payment link via email</li>
-          <li>4. Access credentials sent after payment</li>
-        </ol>
+
+      <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 text-left">
+        <p className="font-medium mb-2">What happens next:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Our team will review your application</li>
+          <li>You&apos;ll receive a confirmation email</li>
+          <li>
+            Payment verification will be completed within 2-3 business days
+          </li>
+          <li>Once approved, you&apos;ll receive your membership details</li>
+        </ul>
       </div>
+
+      <button
+        type="button"
+        onClick={onReset}
+        className="inline-flex items-center justify-center rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 mt-4"
+      >
+        Register Another Member
+      </button>
     </motion.div>
   );
 }
+
+export default RegisterPage;

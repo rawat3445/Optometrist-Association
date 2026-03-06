@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  author
+  reviewer
+  admin
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  name      String?
+  password  String
+  role      Role      @default(author)
+
+  // 🔥 Proper reverse relation
+  articles  Article[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Article {
+  id           Int      @id @default(autoincrement())
+  title        String
+  articleType  String
+  keywords     String
+  abstract     String
+
+  introduction String?
+  methods      String?
+  results      String?
+  discussion   String?
+  conclusion   String?
+  references   String?
+
+  // ✅ Keep this name (match your API)
+  pdfPath      String?
+
+  status       String   @default("submitted")
+
+  // ✅ Relation (correct type Int)
+  authorId     Int
+  author       User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([authorId])
+}
+
+model Patient {
+  id           Int           @id @default(autoincrement())
+  firstName    String
+  lastName     String
+  email        String?       @unique
+  phone        String?
+  dob          DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  appointments Appointment[]
+  eyeExams     EyeExam[]
+}
+
+model Appointment {
+  id        Int      @id @default(autoincrement())
+  patientId Int
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  date      DateTime
+  reason    String?
+  status    String   @default("scheduled")
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EyeExam {
+  id           Int      @id @default(autoincrement())
+  patientId    Int
+  patient      Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  examDate     DateTime @default(now())
+  rightEyeSPH  String?
+  rightEyeCYL  String?
+  rightEyeAXIS String?
+  leftEyeSPH   String?
+  leftEyeCYL   String?
+  leftEyeAXIS  String?
+  pd           String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Member {
+  id                    Int      @id @default(autoincrement())
+  fullName              String
+  guardianName          String
+  dateOfBirth           DateTime
+  occupation            String
+  phone                 String   @unique
+  email                 String   @unique
+  panNumber             String?
+  aadhaarNumber         String?
+  permanentAddress      String
+  correspondenceAddress String?
+  sameAddress           Boolean  @default(false)
+  degree                String
+  degreeCertificatePath String?
+  membershipType        String
+  paymentProofPath      String?
+  declarationAccepted   Boolean  @default(false)
+  status                String   @default("pending")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}

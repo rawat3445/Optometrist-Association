@@ -1,0 +1,5 @@
+{
+  "datasource": {
+    "url": "postgresql://neondb_owner:npg_szfAx5pJ9vbW@ep-flat-cell-a1rm4xwp.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+  }
+}

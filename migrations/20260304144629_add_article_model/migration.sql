@@ -1,0 +1,24 @@
+-- CreateTable
+CREATE TABLE "Article" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "articleType" TEXT NOT NULL,
+    "keywords" TEXT NOT NULL,
+    "abstract" TEXT NOT NULL,
+    "introduction" TEXT,
+    "methods" TEXT,
+    "results" TEXT,
+    "discussion" TEXT,
+    "conclusion" TEXT,
+    "references" TEXT,
+    "pdfPath" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'submitted',
+    "authorId" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Article_pkey" PRIMARY KEY ("id")
+);
+
+-- AddForeignKey
+ALTER TABLE "Article" ADD CONSTRAINT "Article_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

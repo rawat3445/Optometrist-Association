@@ -17,6 +17,7 @@ import {
   Filter,
   ExternalLink,
   User,
+  Shield,
 } from "lucide-react";
 
 export default function Journal() {
@@ -65,14 +66,20 @@ function TopInfoBar() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button className="flex items-center gap-1 hover:text-blue-200 transition">
-            <Bell size={16} />
-            Alerts
-          </button>
-          <button className="flex items-center gap-1 hover:text-blue-200 transition">
-            <User size={16} />
-            Author Login
-          </button>
+          <Link
+            href="/admin/login"
+            className="flex items-center gap-1 hover:text-blue-200 transition border-l border-blue-700 pl-4"
+          >
+            <Shield size={16} />
+            Admin Login
+          </Link>
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-1 hover:text-blue-200 transition border-l border-blue-700 pl-4"
+          >
+            <Shield size={16} />
+            author dashboard
+          </Link>
         </div>
       </div>
     </div>
@@ -156,7 +163,7 @@ function HeroSection() {
           </p>
 
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="#submit">
+            <Link href="/submit">
               <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg hover:shadow-xl flex items-center gap-2">
                 <FileText size={20} />
                 Submit Your Article
@@ -182,35 +189,26 @@ function CurrentIssue() {
 
   const articles = [
     {
+      slug: "myopia-control-orthokeratology",
       title:
         "Myopia Control Using Orthokeratology Lenses: A 5-Year Longitudinal Study",
       authors: "Dr. Rajesh Kumar, Dr. Priya Sharma, Dr. Ankit Verma",
       type: "Original Research",
       pages: "Pages 1-12",
       doi: "10.1234/jor.2025.001",
+      abstract:
+        "This study evaluates the long-term efficacy of orthokeratology lenses in controlling myopia progression over five years.",
     },
     {
+      slug: "digital-eye-strain-post-pandemic",
       title:
         "Digital Eye Strain in the Post-Pandemic Era: Prevalence and Risk Factors",
       authors: "Dr. Meera Patel, Dr. Suresh Reddy",
       type: "Clinical Study",
       pages: "Pages 13-24",
       doi: "10.1234/jor.2025.002",
-    },
-    {
-      title: "Advances in Contact Lens Materials: A Comprehensive Review",
-      authors: "Dr. Vikram Singh, Dr. Neha Gupta, Dr. Arjun Mehta",
-      type: "Review Article",
-      pages: "Pages 25-38",
-      doi: "10.1234/jor.2025.003",
-    },
-    {
-      title:
-        "Tear Film Dynamics in Dry Eye Disease: Novel Diagnostic Approaches",
-      authors: "Dr. Kavita Desai, Dr. Amit Joshi",
-      type: "Original Research",
-      pages: "Pages 39-50",
-      doi: "10.1234/jor.2025.004",
+      abstract:
+        "A cross-sectional study examining the prevalence of digital eye strain following increased screen exposure post-pandemic.",
     },
   ];
 
@@ -274,9 +272,11 @@ function CurrentIssue() {
                         </span>
                       </div>
 
-                      <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition">
-                        {article.title}
-                      </h3>
+                      <Link href={`/journal/${article.slug}`}>
+                        <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition cursor-pointer">
+                          {article.title}
+                        </h3>
+                      </Link>
 
                       <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
                         <Users size={16} />
@@ -425,7 +425,7 @@ function AuthorGuidelines() {
     },
     {
       step: "4",
-      title: "Publication",
+      title: "Publication & Indexing",
       description:
         "Accepted articles are published online and in print. Open access option available.",
       icon: BookOpen,
@@ -481,12 +481,21 @@ function AuthorGuidelines() {
             ))}
           </div>
 
-          <div className="text-center">
-            <Link href="#submit">
+          <div className="text-center space-y-4">
+            <Link href="/author-guidelines">
               <button className="px-8 py-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-700 transition shadow-xl hover:shadow-2xl">
-                Submit Your Manuscript
+                View Full Author Guidelines
               </button>
             </Link>
+
+            <a
+              href="/author-guidelines.pdf"
+              target="_blank"
+              className="inline-flex items-center gap-2 text-blue-600 font-semibold hover:underline"
+            >
+              <Download size={18} />
+              Download Author Guidelines (PDF)
+            </a>
           </div>
         </motion.div>
       </div>
