@@ -79,22 +79,22 @@ export default function EditorialBoardCarousel() {
                 key={`${member.name}-${index}`}
                 className="editorial-card group"
               >
-                <div className="relative h-[420px] overflow-hidden rounded-[3.75rem] bg-slate-800 md:h-[500px]">
+                <div className="relative h-[260px] overflow-hidden rounded-[2.25rem] bg-slate-800 sm:h-[300px] md:h-[340px]">
                   <Image
                     src={member.image}
                     alt={`${member.name} editorial board member`}
                     fill
-                    sizes="(max-width: 768px) 78vw, 320px"
+                    sizes="(max-width: 768px) 72vw, 260px"
                     className="object-cover transition duration-700 group-hover:scale-110"
                     style={{ objectPosition: member.position }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
                 </div>
-                <div className="px-2 pt-5">
+                <div className="px-2 pt-4">
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-teal-200">
                     {member.role}
                   </p>
-                  <h3 className="mt-2 text-2xl font-bold text-white">
+                  <h3 className="mt-2 text-xl font-bold text-white sm:text-2xl">
                     {member.name}
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-blue-100">
@@ -130,7 +130,7 @@ export default function EditorialBoardCarousel() {
         .editorial-carousel-track {
           display: flex;
           width: max-content;
-          gap: 1.5rem;
+          gap: 1rem;
           animation: editorialSlide 28s linear infinite;
         }
 
@@ -139,12 +139,12 @@ export default function EditorialBoardCarousel() {
         }
 
         .editorial-card {
-          width: min(88vw, 460px);
+          width: min(76vw, 320px);
           flex: 0 0 auto;
           border: 1px solid rgba(255, 255, 255, 0.14);
-          border-radius: 4.25rem;
+          border-radius: 2.75rem;
           background: rgba(255, 255, 255, 0.1);
-          padding: 0.9rem;
+          padding: 0.75rem;
           box-shadow: 0 30px 80px -45px rgba(15, 23, 42, 0.9);
           backdrop-filter: blur(18px);
         }

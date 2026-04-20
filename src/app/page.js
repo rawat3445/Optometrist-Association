@@ -505,38 +505,46 @@ function AboutSection() {
             transition={{ duration: 0.8 }}
             className="relative"
           >
-            <div className="relative h-[320px] overflow-hidden rounded-2xl bg-gradient-to-br from-blue-100 to-teal-100 shadow-2xl sm:h-[450px] md:h-[550px]">
+            <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-blue-100 to-teal-100 shadow-2xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/Members_Pic.jpg"
                 alt="Optometry Association Team Members"
-                className="w-full h-full object-cover"
+                className="h-auto w-full object-contain"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 via-transparent to-transparent pointer-events-none" />
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                <h3 className="text-2xl font-bold mb-2">Our Team</h3>
-                <p className="text-blue-100">
+            </div>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-stretch">
+              <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-lg">
+                <h3 className="mb-2 text-xl font-bold text-gray-900 sm:text-2xl">
+                  Our Team
+                </h3>
+                <p className="text-sm leading-6 text-gray-600 sm:text-base">
                   Dedicated professionals advancing eye care
                 </p>
               </div>
-            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              className="absolute -bottom-8 left-3 z-20 rounded-xl bg-white p-3 shadow-xl sm:-bottom-12 sm:-left-6 md:-bottom-17 md:-left-10"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center text-teal-600">
-                  <Award size={32} />
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.8, delay: 0.5 }}
+                className="rounded-2xl bg-white p-5 shadow-xl"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-600 sm:h-16 sm:w-16">
+                    <Award size={32} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold leading-none text-gray-800">
+                      15+
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-gray-600 sm:text-base">
+                      Years of Impact
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-800">15+</p>
-                  <p className="text-gray-600">Years of Impact</p>
-                </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
 
             <div className="absolute -top-4 -right-4 w-24 h-24 bg-blue-500/20 rounded-full blur-2xl -z-10" />
             <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-teal-500/20 rounded-full blur-2xl -z-10" />
