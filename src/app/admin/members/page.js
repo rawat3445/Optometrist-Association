@@ -182,11 +182,78 @@ export default async function MembersPage({ searchParams }) {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {members.map((member) => (
-                  <ExpandableRow
-                    key={member.id}
-                    member={member}
-                    getStatusIcon={getStatusIcon}
-                  />
+                  <tr key={member.id} className="hover:bg-gray-50 transition">
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <div className="font-medium text-gray-900">
+                        #{member.id}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="font-medium text-gray-900">
+                        {member.fullName}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-start gap-2">
+                        <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-700 break-all">
+                          {member.email}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-700">{member.phone}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-700">{member.degree}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        {member.membershipType}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(member.status)}
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            member.status === "approved"
+                              ? "bg-green-100 text-green-800"
+                              : member.status === "rejected"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {member.status || "pending"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-600 text-sm">
+                          {new Date(member.createdAt).toLocaleDateString(
+                            "en-GB"
+                          )}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <Link
+                        href={`/admin/members/${member.id}`}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View
+                      </Link>
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>

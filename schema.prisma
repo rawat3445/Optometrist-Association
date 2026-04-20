@@ -14,25 +14,25 @@ enum Role {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  name      String?
-  password  String
-  role      Role      @default(author)
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  name     String?
+  password String
+  role     Role    @default(author)
 
   // 🔥 Proper reverse relation
-  articles  Article[]
+  articles Article[]
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Article {
-  id           Int      @id @default(autoincrement())
-  title        String
-  articleType  String
-  keywords     String
-  abstract     String
+  id          Int    @id @default(autoincrement())
+  title       String
+  articleType String
+  keywords    String
+  abstract    String
 
   introduction String?
   methods      String?
@@ -42,16 +42,16 @@ model Article {
   references   String?
 
   // ✅ Keep this name (match your API)
-  pdfPath      String?
+  pdfPath String?
 
-  status       String   @default("submitted")
+  status String @default("submitted")
 
   // ✅ Relation (correct type Int)
-  authorId     Int
-  author       User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([authorId])
 }
@@ -99,24 +99,55 @@ model EyeExam {
 }
 
 model Member {
-  id                    Int      @id @default(autoincrement())
-  fullName              String
-  guardianName          String
-  dateOfBirth           DateTime
-  occupation            String
-  phone                 String   @unique
-  email                 String   @unique
-  panNumber             String?
-  aadhaarNumber         String?
-  permanentAddress      String
-  correspondenceAddress String?
-  sameAddress           Boolean  @default(false)
-  degree                String
-  degreeCertificatePath String?
-  membershipType        String
-  paymentProofPath      String?
-  declarationAccepted   Boolean  @default(false)
-  status                String   @default("pending")
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                          Int      @id @default(autoincrement())
+  fullName                    String
+  guardianName                String
+  dateOfBirth                 DateTime
+  gender                      String?
+  nationality                 String?
+  occupation                  String
+  phone                       String   @unique
+  email                       String   @unique
+  panNumber                   String?
+  aadhaarNumber               String?
+  permanentAddress            String
+  correspondenceAddress       String?
+  city                        String?
+  state                       String?
+  pincode                     String?
+  sameAddress                 Boolean  @default(false)
+  degree                      String
+  institution                 String?
+  university                  String?
+  yearOfPassing               String?
+  registrationNumber          String?
+  registrationCouncil         String?
+  specialty                   String?
+  currentDesignation          String?
+  workplace                   String?
+  degreeCertificatePath       String?
+  registrationCertificatePath String?
+  membershipType              String
+  otherAssociationName        String?
+  fellowshipInterest          Boolean  @default(false)
+  fellowshipArea              String?
+  journalPreference           String?
+  paymentReference            String?
+  proposerName                String?
+  proposerMembershipNo        String?
+  proposerContact             String?
+  proposerEmail               String?
+  seconderName                String?
+  seconderMembershipNo        String?
+  seconderContact             String?
+  seconderEmail               String?
+  photoPath                   String?
+  panCardPath                 String?
+  addressProofPath            String?
+  workingProofPath            String?
+  paymentProofPath            String?
+  declarationAccepted         Boolean  @default(false)
+  status                      String   @default("pending")
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
 }

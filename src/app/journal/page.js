@@ -152,12 +152,15 @@ function HeroSection() {
             Peer-Reviewed Open Access Journal
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Journal of Optometry Research
+          <h1 className="text-xl md:text-5xl font-bold text-gray-900 mb-2">
+            Offical Journal of Optometry Research
+          </h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-blue-700 mb-4">
+            Dristi Mitigya
           </h1>
 
           <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-            Official publication of the Optometrist Association of India.
+            Official publication of the Optometrists Association of India.
             Publishing high-quality research in clinical and experimental
             optometry, vision science, and eye care.
           </p>
@@ -510,19 +513,19 @@ function EditorialBoard() {
 
   const editors = [
     {
-      name: "Dr. Ramesh Kumar",
+      name: "Dr. Gaurav Bhardwaj",
       role: "Editor-in-Chief",
       affiliation: "AIIMS, New Delhi",
       specialty: "Clinical Optometry",
     },
     {
-      name: "Dr. Priya Sharma",
+      name: "Dr. Animesh Mondal",
       role: "Associate Editor",
       affiliation: "LV Prasad Eye Institute",
       specialty: "Pediatric Vision",
     },
     {
-      name: "Dr. Suresh Patel",
+      name: "Dr. Sunil kumar dixit",
       role: "Managing Editor",
       affiliation: "Sankara Nethralaya",
       specialty: "Contact Lens Research",

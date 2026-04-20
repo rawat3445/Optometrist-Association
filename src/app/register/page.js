@@ -3,8 +3,40 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  BookOpen,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  GraduationCap,
+  Shield,
+  User,
+} from "lucide-react";
 import Image from "next/image";
+
+const FORM_STEPS = [
+  { number: 1, label: "Applicant", icon: User },
+  { number: 2, label: "Qualification", icon: GraduationCap },
+  { number: 3, label: "Membership", icon: BookOpen },
+  { number: 4, label: "Declaration", icon: Shield },
+  { number: 5, label: "Review", icon: CheckCircle },
+];
+
+const inputClass =
+  "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+
+const fileClass =
+  "w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700 file:mr-4 file:rounded-full file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-200";
+
+const ONE_TIME_APPLICATION_FEE = 750;
+const ANNUAL_RENEWAL_FEES = {
+  student: 250,
+  practitioner: 500,
+};
+
+function formatRupees(amount) {
+  return `Rs. ${amount.toLocaleString("en-IN")}`;
+}
 
 export function RegisterPage() {
   const [submitStatus, setSubmitStatus] = useState("idle"); // idle | submitting | success | error
@@ -15,7 +47,11 @@ export function RegisterPage() {
   const { register, watch, setValue, handleSubmit, getValues, reset } = useForm(
     {
       defaultValues: {
-        membershipType: "",
+        membershipType: "practitioner",
+        gender: "",
+        fellowshipInterest: false,
+        journalPreference: "digital",
+        newsletterOptIn: true,
         sameAddress: false,
         declarationAccepted: false,
       },
@@ -30,6 +66,7 @@ export function RegisterPage() {
     if (!data.guardianName || data.guardianName.length < 3)
       newErrors.guardianName = "Name must be 3+ characters";
     if (!data.dateOfBirth) newErrors.dateOfBirth = "Date of birth is required";
+    if (!data.gender) newErrors.gender = "Please select gender";
     if (!data.occupation || data.occupation.length < 2)
       newErrors.occupation = "Occupation required";
     if (!data.phone || !/^[0-9]{10}$/.test(data.phone))
@@ -38,6 +75,11 @@ export function RegisterPage() {
       newErrors.email = "Enter valid email";
     if (!data.permanentAddress || data.permanentAddress.length < 10)
       newErrors.permanentAddress = "Address must be 10+ characters";
+    if (!data.city || data.city.length < 2) newErrors.city = "City is required";
+    if (!data.state || data.state.length < 2)
+      newErrors.state = "State is required";
+    if (!data.pincode || !/^[0-9]{6}$/.test(data.pincode))
+      newErrors.pincode = "Enter 6-digit pincode";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -46,6 +88,12 @@ export function RegisterPage() {
   const validateStep2 = (data) => {
     const newErrors = {};
     if (!data.degree) newErrors.degree = "Please select a degree";
+    if (!data.institution || data.institution.length < 3)
+      newErrors.institution = "Institution is required";
+    if (!data.yearOfPassing || !/^[0-9]{4}$/.test(data.yearOfPassing))
+      newErrors.yearOfPassing = "Enter year of passing";
+    if (!data.registrationNumber || data.registrationNumber.length < 3)
+      newErrors.registrationNumber = "Registration number is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -54,6 +102,14 @@ export function RegisterPage() {
     const newErrors = {};
     if (!data.membershipType)
       newErrors.membershipType = "Please select a membership type";
+    if (!data.proposerName || data.proposerName.length < 3)
+      newErrors.proposerName = "Proposer name is required";
+    if (!data.proposerMembershipNo || data.proposerMembershipNo.length < 2)
+      newErrors.proposerMembershipNo = "Proposer membership number is required";
+    if (!data.seconderName || data.seconderName.length < 3)
+      newErrors.seconderName = "Seconder name is required";
+    if (!data.seconderMembershipNo || data.seconderMembershipNo.length < 2)
+      newErrors.seconderMembershipNo = "Seconder membership number is required";
     if (!data.paymentProof || data.paymentProof?.length === 0)
       newErrors.paymentProof = "Please upload payment proof";
     setErrors(newErrors);
@@ -168,15 +224,104 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 py-10 px-4">
-      <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg">
-        <p className="text-center mb-6 text-gray-600 font-medium text-lg">
-          Step {currentStep} of 5
-        </p>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dbeafe_0%,#f8fafc_38%,#ecfeff_100%)] px-4 py-10">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-8 overflow-hidden rounded-[2.5rem] bg-slate-950 p-6 text-white shadow-2xl md:p-10">
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.3em] text-teal-200">
+                Society Membership Application
+              </p>
+              <h1 className="mt-4 text-4xl font-black leading-tight md:text-6xl">
+                Formal membership form
+              </h1>
+              <p className="mt-5 max-w-3xl text-base leading-8 text-blue-100">
+                Redesigned in the style of Delhi Ophthalmological Society
+                membership applications, with personal details, addresses,
+                qualifications, proposer and seconder references, document
+                uploads, payment proof and declaration.
+              </p>
+            </div>
+            
+            <div className="rounded-[2rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
+              <p className="text-sm font-bold text-white">
+                Keep these ready before submitting
+              </p>
+              <ul className="mt-4 space-y-3 text-sm leading-6 text-blue-100">
+                <li className="flex gap-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-teal-300" />
+                  Degree, registration certificate and applicant photograph.
+                </li>
+                <li className="flex gap-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-teal-300" />
+                  Proposer and seconder membership details for verification.
+                </li>
+                <li className="flex gap-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-teal-300" />
+                  Payment reference and screenshot after scanning the QR code.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-6 grid gap-3 md:grid-cols-5">
+          {FORM_STEPS.map((step) => {
+            const Icon = step.icon;
+            const active = currentStep === step.number;
+            const done = currentStep > step.number;
+
+            return (
+              <div
+                key={step.number}
+                className={`rounded-2xl border p-4 shadow-sm transition ${
+                  active
+                    ? "border-blue-500 bg-blue-50"
+                    : done
+                    ? "border-emerald-200 bg-emerald-50"
+                    : "border-slate-200 bg-white"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${
+                      active
+                        ? "bg-blue-600 text-white"
+                        : done
+                        ? "bg-emerald-600 text-white"
+                        : "bg-slate-100 text-slate-500"
+                    }`}
+                  >
+                    {done ? (
+                      <CheckCircle className="h-5 w-5" />
+                    ) : (
+                      <Icon className="h-5 w-5" />
+                    )}
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
+                      Step {step.number}
+                    </p>
+                    <p className="text-sm font-bold text-slate-950">
+                      {step.label}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mx-auto rounded-[2.5rem] border border-white bg-white/95 p-5 shadow-xl shadow-blue-100/60 sm:p-8">
+        {currentStep <= 5 && (
+          <p className="mb-6 text-center text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
+            Step {currentStep} of 5
+          </p>
+        )}
 
         {/* Status Messages */}
         {submitStatus === "submitting" && (
-          <div className="mb-4 p-3 bg-blue-50 text-blue-700 rounded-lg flex items-center gap-2">
+          <div className="mb-4 flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 p-3 text-blue-700">
             <svg
               className="animate-spin h-5 w-5 text-blue-600"
               fill="none"
@@ -201,7 +346,7 @@ export function RegisterPage() {
         )}
 
         {submitStatus === "error" && (
-          <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">
+          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-red-700">
             {submitError}
           </div>
         )}
@@ -266,6 +411,7 @@ export function RegisterPage() {
         </form>
       </div>
     </div>
+    </div>
   );
 }
 
@@ -275,9 +421,20 @@ function Step1({ register, errors, onNext, watch, setValue }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="space-y-4"
+      className="space-y-6"
     >
-      <h2 className="text-2xl font-bold text-gray-800">Personal Details</h2>
+      <div className="rounded-[2rem] border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-blue-600">
+          Application Part A
+        </p>
+        <h2 className="mt-2 text-2xl font-bold text-slate-950">
+          Personal details and address
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          This follows the formal society format for applicant profile,
+          contact details and correspondence information.
+        </p>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
@@ -317,6 +474,25 @@ function Step1({ register, errors, onNext, watch, setValue }) {
           />
           {errors.dateOfBirth && (
             <p className="text-red-500 text-xs mt-1">{errors.dateOfBirth}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Gender *
+          </label>
+          <select
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("gender")}
+          >
+            <option value="">Select Gender</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+            <option value="other">Other</option>
+            <option value="prefer-not-to-say">Prefer not to say</option>
+          </select>
+          {errors.gender && (
+            <p className="text-red-500 text-xs mt-1">{errors.gender}</p>
           )}
         </div>
 
@@ -396,6 +572,45 @@ function Step1({ register, errors, onNext, watch, setValue }) {
         )}
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            City *
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("city")}
+          />
+          {errors.city && (
+            <p className="text-red-500 text-xs mt-1">{errors.city}</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            State *
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("state")}
+          />
+          {errors.state && (
+            <p className="text-red-500 text-xs mt-1">{errors.state}</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Pincode *
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("pincode")}
+          />
+          {errors.pincode && (
+            <p className="text-red-500 text-xs mt-1">{errors.pincode}</p>
+          )}
+        </div>
+      </div>
+
       <label className="flex items-center gap-2 p-3 border border-gray-200 rounded-lg">
         <input
           type="checkbox"
@@ -440,26 +655,124 @@ function Step2({ register, errors, onNext, onPrev }) {
       exit={{ opacity: 0, x: -20 }}
       className="space-y-6"
     >
-      <h2 className="text-2xl font-bold text-gray-800">
-        Qualification Details
-      </h2>
+      <div className="rounded-[2rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-700">
+          Application Part B
+        </p>
+        <h2 className="mt-2 text-2xl font-bold text-slate-950">
+          Qualification and registration
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Add your degree, institution, professional registration and speciality
+          details for society verification.
+        </p>
+      </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Degree *
-        </label>
-        <select
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          {...register("degree")}
-        >
-          <option value="">Select Degree</option>
-          <option value="boptom">B.Optom</option>
-          <option value="moptom">M.Optom</option>
-          <option value="phd">PhD</option>
-        </select>
-        {errors.degree && (
-          <p className="text-red-500 text-xs mt-1">{errors.degree}</p>
-        )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Degree *
+          </label>
+          <select
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("degree")}
+          >
+            <option value="">Select Degree</option>
+            <option value="B.Optom">B.Optom</option>
+            <option value="M.Optom">M.Optom</option>
+            <option value="Diploma in Optometry">Diploma in Optometry</option>
+            <option value="PhD">PhD</option>
+            <option value="Other">Other</option>
+          </select>
+          {errors.degree && (
+            <p className="text-red-500 text-xs mt-1">{errors.degree}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Speciality / area of interest
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Contact lens, low vision, binocular vision..."
+            {...register("specialty")}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Institution / college *
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("institution")}
+          />
+          {errors.institution && (
+            <p className="text-red-500 text-xs mt-1">{errors.institution}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            University / board
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("university")}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Year of passing *
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="2026"
+            {...register("yearOfPassing")}
+          />
+          {errors.yearOfPassing && (
+            <p className="text-red-500 text-xs mt-1">
+              {errors.yearOfPassing}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Registration number *
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("registrationNumber")}
+          />
+          {errors.registrationNumber && (
+            <p className="text-red-500 text-xs mt-1">
+              {errors.registrationNumber}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Registration council
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("registrationCouncil")}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Current workplace
+          </label>
+          <input
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            {...register("workplace")}
+          />
+        </div>
       </div>
 
       <div>
@@ -470,6 +783,18 @@ function Step2({ register, errors, onNext, onPrev }) {
           type="file"
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           {...register("degreeCertificate")}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Registration Certificate
+        </label>
+        <input
+          type="file"
+          accept="image/*,application/pdf"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          {...register("registrationCertificate")}
         />
       </div>
 
@@ -495,13 +820,24 @@ function Step2({ register, errors, onNext, onPrev }) {
 
 function Step3({ register, watch, errors, onPrev, onNext }) {
   const membershipType = watch("membershipType");
+  const fellowshipInterest = watch("fellowshipInterest");
+  const annualRenewalFee = ANNUAL_RENEWAL_FEES[membershipType] || 0;
+  const firstYearPayable = ONE_TIME_APPLICATION_FEE + annualRenewalFee;
 
   const getFeeText = () => {
     if (membershipType === "student")
-      return "Student Member fee: ₹750 per year";
-    if (membershipType === "practicing")
-      return "Regular / Associate fee: ₹1000 per year";
-    return "Please select a membership type to see the fee.";
+      return `Student first-year payable: ${formatRupees(
+        firstYearPayable
+      )} (${formatRupees(ONE_TIME_APPLICATION_FEE)} one-time + ${formatRupees(
+        annualRenewalFee
+      )} annual renewal).`;
+    if (membershipType === "practitioner")
+      return `Practitioner first-year payable: ${formatRupees(
+        firstYearPayable
+      )} (${formatRupees(ONE_TIME_APPLICATION_FEE)} one-time + ${formatRupees(
+        annualRenewalFee
+      )} annual renewal).`;
+    return "Select a membership type to see the fee note.";
   };
 
   return (
@@ -511,25 +847,56 @@ function Step3({ register, watch, errors, onPrev, onNext }) {
       exit={{ opacity: 0, x: -20 }}
       className="space-y-6"
     >
-      <h2 className="text-2xl font-bold text-gray-800">Membership</h2>
+      <div className="rounded-[2rem] border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-amber-700">
+          Application Part C
+        </p>
+        <h2 className="mt-2 text-2xl font-bold text-slate-950">
+          Membership, proposer and seconder
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Select the category and add two member references for society
+          verification.
+        </p>
+      </div>
 
-      <div className="space-y-3">
-        {["student", "practicing"].map((t) => (
+      <div className="grid gap-3 md:grid-cols-2">
+        {[
+          [
+            "student",
+            "Student Member",
+            `Renewable yearly fee ${formatRupees(
+              ANNUAL_RENEWAL_FEES.student
+            )}`,
+          ],
+          [
+            "practitioner",
+            "Practitioner Member",
+            `Renewable yearly fee ${formatRupees(
+              ANNUAL_RENEWAL_FEES.practitioner
+            )}`,
+          ],
+        ].map(([value, label, description]) => (
           <label
-            key={t}
-            className={`flex items-center gap-3 rounded-md border px-4 py-2 text-sm capitalize cursor-pointer ${
-              membershipType === t
-                ? "border-blue-500 bg-blue-50"
-                : "border-gray-200 hover:bg-gray-50"
+            key={value}
+            className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-4 text-sm font-semibold ${
+              membershipType === value
+                ? "border-blue-500 bg-blue-50 text-blue-800"
+                : "border-gray-200 text-gray-700 hover:bg-gray-50"
             }`}
           >
             <input
               type="radio"
-              value={t}
+              value={value}
               {...register("membershipType")}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+              className="mt-1 h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            {t}
+            <span>
+              <span className="block text-base">{label}</span>
+              <span className="mt-1 block text-xs font-medium text-slate-500">
+                {description}
+              </span>
+            </span>
           </label>
         ))}
         {errors.membershipType && (
@@ -537,12 +904,148 @@ function Step3({ register, watch, errors, onPrev, onNext }) {
         )}
       </div>
 
+      <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+        <p className="font-semibold mb-1">Member references</p>
+        <p>
+          Enter proposer and seconder details. If the society later relaxes this
+          rule, the same fields can be made optional without changing the form
+          layout.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Proposer Name *
+          </label>
+          <input className={inputClass} {...register("proposerName")} />
+          {errors.proposerName && (
+            <p className="text-red-500 text-xs mt-1">{errors.proposerName}</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Proposer Membership No. *
+          </label>
+          <input className={inputClass} {...register("proposerMembershipNo")} />
+          {errors.proposerMembershipNo && (
+            <p className="text-red-500 text-xs mt-1">
+              {errors.proposerMembershipNo}
+            </p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Seconder Name *
+          </label>
+          <input className={inputClass} {...register("seconderName")} />
+          {errors.seconderName && (
+            <p className="text-red-500 text-xs mt-1">{errors.seconderName}</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Seconder Membership No. *
+          </label>
+          <input className={inputClass} {...register("seconderMembershipNo")} />
+          {errors.seconderMembershipNo && (
+            <p className="text-red-500 text-xs mt-1">
+              {errors.seconderMembershipNo}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Journal / newsletter preference
+          </label>
+          <select className={inputClass} {...register("journalPreference")}>
+            <option value="digital">Digital journal and newsletter</option>
+            <option value="print">Printed journal where available</option>
+            <option value="both">Digital and printed updates</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Other society membership
+          </label>
+          <input
+            className={inputClass}
+            placeholder="AIOS, OCI, academic society..."
+            {...register("otherAssociationName")}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-purple-200 bg-purple-50 p-4">
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            {...register("fellowshipInterest")}
+            className="mt-1 h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+          />
+          <span>
+            <span className="block text-sm font-bold text-purple-900">
+              I am interested in Fellowship review
+            </span>
+            <span className="mt-1 block text-sm leading-6 text-purple-800">
+              Fellowship is kept separate from Student and Practitioner
+              membership. It can be reviewed after membership eligibility,
+              professional contribution, and society approval.
+            </span>
+          </span>
+        </label>
+        {fellowshipInterest && (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-purple-900 mb-1">
+              Fellowship area / reason
+            </label>
+            <input
+              className={inputClass}
+              placeholder="Clinical practice, research, teaching, society service..."
+              {...register("fellowshipArea")}
+            />
+          </div>
+        )}
+      </div>
+
       <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
         <p className="font-semibold mb-1">Membership Fees</p>
         <p>{getFeeText()}</p>
-        <p className="mt-1 text-xs text-amber-900">
-          Proof of annual Membership fees (Regular/Associate: ₹1000, Student
-          Member: ₹750) is required.
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <div className="rounded-xl bg-white/70 px-3 py-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+              One-time
+            </p>
+            <p className="mt-1 font-bold text-amber-950">
+              {formatRupees(ONE_TIME_APPLICATION_FEE)}
+            </p>
+            <p className="text-xs text-amber-800">For all applicants</p>
+          </div>
+          <div className="rounded-xl bg-white/70 px-3 py-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+              Student yearly
+            </p>
+            <p className="mt-1 font-bold text-amber-950">
+              {formatRupees(ANNUAL_RENEWAL_FEES.student)}
+            </p>
+            <p className="text-xs text-amber-800">Renewable each year</p>
+          </div>
+          <div className="rounded-xl bg-white/70 px-3 py-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+              Practitioner yearly
+            </p>
+            <p className="mt-1 font-bold text-amber-950">
+              {formatRupees(ANNUAL_RENEWAL_FEES.practitioner)}
+            </p>
+            <p className="text-xs text-amber-800">Renewable each year</p>
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-amber-900">
+          Pay the first-year total shown above and upload the payment proof.
+          Fellowship review is separate and does not replace student membership.
         </p>
       </div>
 
@@ -558,8 +1061,52 @@ function Step3({ register, watch, errors, onPrev, onNext }) {
           alt="Payment QR"
         />
         <p className="text-xs text-gray-500 text-center">
-          After successful payment, upload the proof of payment below.
+          Current first-year payable: {formatRupees(firstYearPayable)}. After
+          payment, upload the proof below.
         </p>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <p className="text-sm font-semibold text-gray-800 mb-3">
+          Additional attachments
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Applicant photograph
+            </label>
+            <input type="file" accept="image/*" className={fileClass} {...register("photo")} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              PAN card
+            </label>
+            <input type="file" accept="image/*,application/pdf" className={fileClass} {...register("panCard")} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Residence proof
+            </label>
+            <input type="file" accept="image/*,application/pdf" className={fileClass} {...register("addressProof")} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Working proof / institute ID
+            </label>
+            <input type="file" accept="image/*,application/pdf" className={fileClass} {...register("workingProof")} />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">
+          Payment reference / UTR
+        </label>
+        <input
+          className={inputClass}
+          placeholder="Optional transaction reference"
+          {...register("paymentReference")}
+        />
       </div>
 
       <div className="space-y-2">
@@ -570,7 +1117,7 @@ function Step3({ register, watch, errors, onPrev, onNext }) {
           type="file"
           accept="image/*,application/pdf"
           {...register("paymentProof")}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1 file:text-sm file:text-blue-700 hover:file:bg-blue-100"
+          className={fileClass}
         />
         {errors.paymentProof && (
           <p className="text-red-500 text-xs">{errors.paymentProof}</p>
@@ -675,51 +1222,106 @@ function ReviewStep({ getValues, onPrev, submitStatus }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="space-y-6"
+      className="space-y-6 text-slate-700"
     >
-      <h2 className="text-2xl font-bold text-gray-800">
-        Review Your Application
-      </h2>
+      <div className="rounded-[2rem] border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-blue-600">
+          Final review
+        </p>
+        <h2 className="mt-2 text-2xl font-bold text-slate-950">
+          Review Your Application
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Please confirm these details before submitting your membership
+          application.
+        </p>
+      </div>
 
       <div className="space-y-4">
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h3 className="font-medium text-gray-700 mb-2">Personal Details</h3>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700 shadow-sm">
+          <h3 className="mb-3 text-base font-bold text-slate-950">
+            Personal Details
+          </h3>
           <p>
-            <span className="font-medium">Name:</span> {data.fullName}
+            <span className="font-semibold text-slate-900">Name:</span>{" "}
+            {data.fullName || "-"}
           </p>
           <p>
-            <span className="font-medium">Father/Husband:</span>{" "}
-            {data.guardianName}
+            <span className="font-semibold text-slate-900">
+              Father/Husband:
+            </span>{" "}
+            {data.guardianName || "-"}
           </p>
           <p>
-            <span className="font-medium">Email:</span> {data.email}
+            <span className="font-semibold text-slate-900">Email:</span>{" "}
+            {data.email || "-"}
           </p>
           <p>
-            <span className="font-medium">Phone:</span> {data.phone}
+            <span className="font-semibold text-slate-900">Phone:</span>{" "}
+            {data.phone || "-"}
           </p>
         </div>
 
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h3 className="font-medium text-gray-700 mb-2">Qualification</h3>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700 shadow-sm">
+          <h3 className="mb-3 text-base font-bold text-slate-950">
+            Qualification
+          </h3>
           <p>
-            <span className="font-medium">Degree:</span> {data.degree}
+            <span className="font-semibold text-slate-900">Degree:</span>{" "}
+            {data.degree || "-"}
+          </p>
+          <p>
+            <span className="font-semibold text-slate-900">Institution:</span>{" "}
+            {data.institution || "-"}
+          </p>
+          <p>
+            <span className="font-semibold text-slate-900">Registration:</span>{" "}
+            {data.registrationNumber || "-"}
           </p>
         </div>
 
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h3 className="font-medium text-gray-700 mb-2">Membership</h3>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700 shadow-sm">
+          <h3 className="mb-3 text-base font-bold text-slate-950">
+            Membership
+          </h3>
           <p>
-            <span className="font-medium">Type:</span> {data.membershipType}
+            <span className="font-semibold text-slate-900">Type:</span>{" "}
+            {data.membershipType || "-"}
+          </p>
+          <p>
+            <span className="font-semibold text-slate-900">
+              First-year payable:
+            </span>{" "}
+            {data.membershipType
+              ? formatRupees(
+                  ONE_TIME_APPLICATION_FEE +
+                    (ANNUAL_RENEWAL_FEES[data.membershipType] || 0)
+                )
+              : "-"}
+          </p>
+          <p>
+            <span className="font-semibold text-slate-900">
+              Fellowship interest:
+            </span>{" "}
+            {data.fellowshipInterest ? "Yes" : "No"}
+          </p>
+          <p>
+            <span className="font-semibold text-slate-900">Proposer:</span>{" "}
+            {data.proposerName || "-"}
+          </p>
+          <p>
+            <span className="font-semibold text-slate-900">Seconder:</span>{" "}
+            {data.seconderName || "-"}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={onPrev}
           disabled={submitStatus === "submitting"}
-          className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50 sm:w-auto"
         >
           <ChevronLeft className="h-4 w-4" /> Back
         </button>
@@ -727,7 +1329,7 @@ function ReviewStep({ getValues, onPrev, submitStatus }) {
         <button
           type="submit"
           disabled={submitStatus === "submitting"}
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
           {submitStatus === "submitting" ? (
             <>
